@@ -10,7 +10,7 @@ class Block(Rectangle):
         super().__init__(grid_x*40, grid_y*40, 40, 40)
 
 class Entity(Rectangle):
-    """Represents the player"""
+    """Represents any entity"""
     def __init__(self, x, y, width, height):
         super().__init__(x, y, width, height)
         self._health = 20
@@ -22,7 +22,8 @@ class Entity(Rectangle):
         # Only check if moving in that direction
         if self._dy >= 0:
             if self._collision(world, pos.DOWN):
-                self._dy = 0
+                self._dy = -0.1 # Standing on something
+                self._double_jump = True
         else:
             if self._collision(world, pos.UP):
                 self._dy = 0
@@ -86,8 +87,9 @@ class Entity(Rectangle):
 class Player(Entity):
     def update_gravity(self, world, camera):
         super().update_gravity(world)
-        camera.offset.x -= self._dx
-        camera.offset.y -= self._dy
+        # camera.offset.x -= self._dx
+        camera.offset.x = -self.x + 785
+        camera.offset.y = -self.y + 385
 
 class Bot(Entity):
     def can_see_player(self, player_pos):
@@ -145,7 +147,7 @@ def main():
     init_window(state['screen_width'], state['screen_height'], "Curious Block")
 
     state['camera'].offset = Vector2(0, 0)
-    state['camera'].target = Vector2(state['player'].x + 15, state['player'].y + 15)
+    state['camera'].target = Vector2(state['player'].x, state['player'].y)
     state['camera'].rotation = 0.0
     state['camera'].zoom = 1.0
 
