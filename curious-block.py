@@ -16,6 +16,7 @@ class Entity(Rectangle):
         self._health = 20
         self._dx = 0
         self._dy = 0
+        self._double_jump = True
 
     def update_gravity(self, world):
         self._dy += 0.3
@@ -81,9 +82,12 @@ class Entity(Rectangle):
         return collision
 
     def jump(self, world):
+        print(self._double_jump)
         if self._collision(world, pos.DOWN):
             self._dy = -8
-
+        elif self._double_jump:
+            self._double_jump = False
+            self._dy = -8
 class Player(Entity):
     def update_gravity(self, world, camera):
         super().update_gravity(world)
@@ -165,7 +169,7 @@ def update_gravity(state):
         state['player']._dx += 1.2
     if is_key_down(KEY_A):
         state['player']._dx -= 1.2
-    if is_key_down(KEY_W):
+    if is_key_pressed(KEY_W):
         state['player'].jump(state['world'].get_blocks())
 
     state['player'].update_gravity(state['world'].get_blocks(), state['camera'])
