@@ -72,9 +72,10 @@ class Entity(Rectangle):
         collision = False
 
         for block in world:
-            for point in points:
-                if check_collision_point_rec(point, block):
-                    collision = True
+            if calc_distance(self.x, self.y, block.x, block.y) < 50:
+                for point in points:
+                    if check_collision_point_rec(point, block):
+                        collision = True
         return collision
 
     def jump(self, world):
@@ -85,7 +86,7 @@ class Player(Entity):
     def update_gravity(self, world, camera):
         super().update_gravity(world)
         camera.offset.x -= self._dx
-        # camera.offset.y = -self.y + 240
+        camera.offset.y -= self._dy
 
 class Bot(Entity):
     def can_see_player(self, player_pos):
@@ -98,7 +99,21 @@ class Bot(Entity):
     def is_aggressive(self):
         raise NotImplementedError("Must be implemented by subclass.")
 
+class World():
+    def __init__(self, width=40, height=30, border=True):
+        super().__init__()
+        self._width, self._height = width, height
+        self._blocks = [Block(1, 10), Block(2,8), Block(2,10), Block(3,9)]
 
+        if border:
+            for i in range(width + 1):
+                self._blocks.append(Block(i,0))
+                self._blocks.append(Block(i, height))
+            for i in range(1, height):
+                self._blocks.append(Block(0, i))
+                self._blocks.append(Block(width, i))
+    def get_blocks(self):
+        return self._blocks
 
 def main():
     state = {
@@ -106,13 +121,13 @@ def main():
         'screen_height': 800,
         'camera': Camera2D(),
         'player': Player(40, 280, 30, 30),
-        'world': [Block(1, 10), Block(2,8), Block(2,10), Block(3,9)]
+        'world': World()
     }
 
     init_window(state['screen_width'], state['screen_height'], "Curious Block")
 
     state['camera'].offset = Vector2(0, 0)
-    state['camera'].target = Vector2(state['player'].x + 20, state['player'].y + 20)
+    state['camera'].target = Vector2(state['player'].x + 15, state['player'].y + 15)
     state['camera'].rotation = 0.0
     state['camera'].zoom = 1.0
 
@@ -131,9 +146,9 @@ def update_gravity(state):
     if is_key_down(KEY_A):
         state['player']._dx -= 1.2
     if is_key_down(KEY_W):
-        state['player'].jump(state['world'])
+        state['player'].jump(state['world'].get_blocks())
 
-    state['player'].update_gravity(state['world'], state['camera'])
+    state['player'].update_gravity(state['world'].get_blocks(), state['camera'])
 
 
 def redraw(state):
@@ -141,9 +156,11 @@ def redraw(state):
     clear_background(RAYWHITE)
     begin_mode2d(state['camera'])
 
+    state['camera'].target = Vector2(state['player'].x + 15, state['player'].y + 15)
+
     draw_rectangle_rec(state['player'], RED)
 
-    for block in state['world']:
+    for block in state['world'].get_blocks():
         draw_rectangle_rec(block, GREEN)
 
     end_mode2d()
@@ -152,6 +169,8 @@ def redraw(state):
 
     end_drawing()
 
+def calc_distance(x1, y1, x2, y2):
+    return sqrt((x1-x2)**2 + (y1-y2)**2)
 
 if __name__ == '__main__':
     main()
