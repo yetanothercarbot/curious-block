@@ -82,12 +82,12 @@ class Entity(Rectangle):
         return collision
 
     def jump(self, world):
-        print(self._double_jump)
         if self._collision(world, pos.DOWN):
-            self._dy = -8
+            self._dy = -12
         elif self._double_jump:
             self._double_jump = False
-            self._dy = -8
+            self._dy = -12
+
 class Player(Entity):
     def update_gravity(self, world, camera):
         super().update_gravity(world)
