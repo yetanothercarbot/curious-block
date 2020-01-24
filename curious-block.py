@@ -117,11 +117,19 @@ class World():
     def _generate(self, seed):
         random.seed(seed)
         centre_spots = []
-        for row in range(4):
+        for row in range(8):
             centre_spots += [(10 * i + random.randint(-8,8),
-                            8 * row + random.randint(-8,8)) for i in range(4)]
+                         5 + 3 * row + random.randint(-8,8)) for i in range(4)]
+
         for block in centre_spots:
-            self._blocks.append(Block(*block))
+            island_height = random.randint(1,3)
+            for layer in range(island_height):
+                island_width = random.randint(-(10-2*layer), 10 - 2*layer)
+                for x in range(int(block[0]-island_width/2), int(block[0]+island_width/2)):
+                    if (0 < x < self._width) and \
+                       (0 < block[1] + layer < self._height):
+                      self._blocks.append(Block(x, block[1] + layer))
+
     def get_blocks(self):
         return self._blocks
 
