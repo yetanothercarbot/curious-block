@@ -1,6 +1,7 @@
 from raylibpy import *
 from math import sqrt, floor
 from constants import *
+import time, random
 
 
 class Block(Rectangle):
@@ -100,10 +101,10 @@ class Bot(Entity):
         raise NotImplementedError("Must be implemented by subclass.")
 
 class World():
-    def __init__(self, width=40, height=30, border=True):
+    def __init__(self, width=40, height=30, border=True, seed=time.time()):
         super().__init__()
         self._width, self._height = width, height
-        self._blocks = [Block(1, 10), Block(2,8), Block(2,10), Block(3,9)]
+        self._blocks = []
 
         if border:
             for i in range(width + 1):
@@ -112,6 +113,15 @@ class World():
             for i in range(1, height):
                 self._blocks.append(Block(0, i))
                 self._blocks.append(Block(width, i))
+        self._generate(seed)
+    def _generate(self, seed):
+        random.seed(seed)
+        centre_spots = []
+        for row in range(4):
+            centre_spots += [(10 * i + random.randint(-8,8),
+                            8 * row + random.randint(-8,8)) for i in range(4)]
+        for block in centre_spots:
+            self._blocks.append(Block(*block))
     def get_blocks(self):
         return self._blocks
 
