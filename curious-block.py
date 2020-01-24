@@ -1,13 +1,12 @@
 from raylibpy import *
-from math import sqrt
+from math import sqrt, floor
 from constants import *
 
 
 class Block(Rectangle):
     """Represents a single block of the world"""
-    def __init__(self, grid_x, grid_y):
+    def __init__(self, grid_x, grid_y, collidable=True):
         super().__init__(grid_x*40, grid_y*40, 40, 40)
-
 
 class Entity(Rectangle):
     """Represents the player"""
@@ -18,10 +17,18 @@ class Entity(Rectangle):
         self._dy = 0
 
     def update_gravity(self, world):
-        if self._collision(world, pos.DOWN):
-            self._dy = min(self._dy, 0)
+        self._dy += 0.3
+        # Only check if moving in that direction
+        if self._dy >= 0:
+            if self._collision(world, pos.DOWN):
+                self._dy = 0
         else:
-            self._dy += 0.3
+            if self._collision(world, pos.UP):
+                self._dy = 0
+
+        if self._dx != 0:
+            if self._collision(world, pos.RIGHT if self._dx > 0 else pos.LEFT):
+                self._dx *= -0.3
         # set a maximum player speed
         self._dx = max(-8, min(8, self._dx))
         # Reduce player x-speed
@@ -32,34 +39,53 @@ class Entity(Rectangle):
         self.x += self._dx
         self.y += self._dy
 
-        print(self.y)
+    def _calculate_grid_check_positions(self):
+        # Get bias to left or right of cell.
+        bias_x = -1 if (self.x % 40 <= 5) else 1
+        bias_y = -1 if (self.y % 40 <= 5) else 1
+        print(bias_x, bias_y)
+        # Get grid x position/s
+        grid_x = (floor(self.x/40), floor(self.x/40) + bias_x)
+        grid_y = (floor(self.y/40), floor(self.y/40) + bias_y)
+
+        return (grid_x, grid_y)
+
 
     def _collision(self, world, direction):
-        collision = False
+        points = []
 
         if direction == pos.UP:
-            selected_point = Vector2(self.x + self.width/2, self.y)
+            points = [(self.x + 1,              self.y - 1),
+                      (self.x + self.width - 1, self.y - 1)]
         elif direction == pos.RIGHT:
-            selected_point = Vector2(self.x + self.width, self.y + self.height/2)
+            points = [(self.x + self.width + 1, self.y + 1),
+                      (self.x + self.width + 1, self.y + self.height - 1)]
         elif direction == pos.DOWN:
-            selected_point = Vector2(self.x + self.width/2, self.y + self.height)
-        else: # Left
-            selected_point = Vector2(self.x, self.y + self.height/2)
+            points = [(self.x + 1,              self.y + self.height + 1),
+                      (self.x + self.width - 1, self.y + self.height + 1)]
+        elif direction == pos.LEFT:
+            points = [(self.x - 1, self.y + 1),
+                      (self.x - 1, self.y + self.height - 1)]
+        else:
+            raise ValueError("No valid direction specified.")
+
+        collision = False
 
         for block in world:
-            if check_collision_point_rec(selected_point, block):
-                collision = True
+            for point in points:
+                if check_collision_point_rec(point, block):
+                    collision = True
         return collision
 
     def jump(self, world):
-        if self._collision(world):
+        if self._collision(world, pos.DOWN):
             self._dy = -8
 
 class Player(Entity):
     def update_gravity(self, world, camera):
         super().update_gravity(world)
-        camera.x = self.x
-        camera.y = self.y
+        camera.offset.x -= self._dx
+        # camera.offset.y = -self.y + 240
 
 class Bot(Entity):
     def can_see_player(self, player_pos):
@@ -79,8 +105,8 @@ def main():
         'screen_width': 1600,
         'screen_height': 800,
         'camera': Camera2D(),
-        'player': Player(400, 280, 40, 40),
-        'world': [Block(10, 10)]
+        'player': Player(40, 280, 30, 30),
+        'world': [Block(1, 10), Block(2,8), Block(2,10), Block(3,9)]
     }
 
     init_window(state['screen_width'], state['screen_height'], "Curious Block")
@@ -100,16 +126,10 @@ def main():
     close_window()
 
 def update_gravity(state):
-    if is_gamepad_available(0):
-        state['player']._dx = 1.2 * get_gamepad_axis_movement(0, 2)
-        state['player']._dy = 1.2 * get_gamepad_axis_movement(0, 3)
-        if is_gamepad_button_pressed(0):
-            state['player'].jump(state['world'])
-    else:
-        if is_key_down(KEY_D):
-            state['player']._dx += 1.2
-        if is_key_down(KEY_A):
-            state['player']._dx -= 1.2
+    if is_key_down(KEY_D):
+        state['player']._dx += 1.2
+    if is_key_down(KEY_A):
+        state['player']._dx -= 1.2
     if is_key_down(KEY_W):
         state['player'].jump(state['world'])
 
@@ -124,7 +144,6 @@ def redraw(state):
     draw_rectangle_rec(state['player'], RED)
 
     for block in state['world']:
-        print(block)
         draw_rectangle_rec(block, GREEN)
 
     end_mode2d()
