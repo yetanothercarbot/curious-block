@@ -28,7 +28,7 @@ class Entity(Rectangle):
 
         if self._dx != 0:
             if self._collision(world, pos.RIGHT if self._dx > 0 else pos.LEFT):
-                self._dx *= -0.3
+                self._dx *= -0.5
         # set a maximum player speed
         self._dx = max(-8, min(8, self._dx))
         # Reduce player x-speed
