@@ -6,8 +6,9 @@ import time, random
 
 class Block(Rectangle):
     """Represents a single block of the world"""
-    def __init__(self, grid_x, grid_y, collidable=True):
+    def __init__(self, grid_x, grid_y, collidable=True, colour=GREEN):
         super().__init__(grid_x*40, grid_y*40, 40, 40)
+        self.colour = colour
 
 class Entity(Rectangle):
     """Represents any entity"""
@@ -23,7 +24,7 @@ class Entity(Rectangle):
         # Only check if moving in that direction
         if self._dy >= 0:
             if self._collision(world, pos.DOWN):
-                self._dy = -0.1 # Standing on something
+                self._dy *= -0.1 # Standing on something
                 self._double_jump = True
         else:
             if self._collision(world, pos.UP):
@@ -75,7 +76,7 @@ class Entity(Rectangle):
         collision = False
 
         for block in world:
-            if calc_distance(self.x, self.y, block.x, block.y) < 50:
+            if utility.calc_distance(self.x, self.y, block.x, block.y) < 40:
                 for point in points:
                     if check_collision_point_rec(point, block):
                         collision = True
@@ -105,9 +106,11 @@ class Bot(Entity):
 
     def is_aggressive(self):
         raise NotImplementedError("Must be implemented by subclass.")
-
+class TriangleBot(Bot):
+    def __init__(self, x, y):
+        super().__init__()
 class World():
-    def __init__(self, width=40, height=30, border=True, seed=time.time()):
+    def __init__(self, width=90, height=50, border=True, seed=time.time()):
         super().__init__()
         self._width, self._height = width, height
         self._blocks = []
@@ -123,9 +126,9 @@ class World():
     def _generate(self, seed):
         random.seed(seed)
         centre_spots = []
-        for row in range(8):
+        for row in range(20):
             centre_spots += [(10 * i + random.randint(-8,8),
-                         5 + 3 * row + random.randint(-8,8)) for i in range(4)]
+                         5 + 3 * row + random.randint(-8,8)) for i in range(20)]
 
         for block in centre_spots:
             island_height = random.randint(1,3)
@@ -192,9 +195,6 @@ def redraw(state):
     draw_text(str(get_fps()), 10, 10, 30, DARKGRAY)
 
     end_drawing()
-
-def calc_distance(x1, y1, x2, y2):
-    return sqrt((x1-x2)**2 + (y1-y2)**2)
 
 if __name__ == '__main__':
     main()
