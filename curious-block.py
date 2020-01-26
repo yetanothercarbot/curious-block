@@ -42,7 +42,7 @@ class Entity(Rectangle):
                 self.x += self._dx
         elif self._dx < 0:
             if self._collision(world, dir.LEFT, new_pos):
-                self.x = floor(self.x/40) * 40
+                self.x = (1 + floor(self.x/40)) * 40
                 self._dx - 0
             else:
                 self.x += self._dx
