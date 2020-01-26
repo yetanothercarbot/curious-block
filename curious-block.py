@@ -21,18 +21,6 @@ class Entity(Rectangle):
 
     def update_gravity(self, world):
         self._dy += 0.3
-        # Only check if moving in that direction
-        if self._dy >= 0:
-            if self._collision(world, pos.DOWN):
-                self._dy *= -0.1 # Standing on something
-                self._double_jump = True
-        else:
-            if self._collision(world, pos.UP):
-                self._dy = 0
-
-        if self._dx != 0:
-            if self._collision(world, pos.RIGHT if self._dx > 0 else pos.LEFT):
-                self._dx *= -0.5
         # set a maximum player speed
         self._dx = max(-8, min(8, self._dx))
         # Reduce player x-speed
@@ -40,8 +28,38 @@ class Entity(Rectangle):
         # A maximum fall speed but no maximum upwards speed
         self._dy = min(5, self._dy)
 
-        self.x += self._dx
-        self.y += self._dy
+        # self.x += self._dx
+        #self.y += self._dy
+
+        # Check that the player won't phase into the box
+        new_pos = (self.x + self._dx, self.y + self._dy)
+
+        if self._dx > 0:
+            if self._collision(world, dir.RIGHT, new_pos):
+                self.x = floor(self.x/40) * 40 + 10
+                self._dx = 0
+            else:
+                self.x += self._dx
+        elif self._dx < 0:
+            if self._collision(world, dir.LEFT, new_pos):
+                self.x = floor(self.x/40) * 40
+                self._dx - 0
+            else:
+                self.x += self._dx
+
+        if self._dy > 0:
+            if self._collision(world, dir.DOWN, new_pos):
+                self.y = floor(self.y/40) * 40 + 10
+                self._double_jump = True
+                self._dy = 0
+            else:
+                self.y += self._dy
+        elif self._dy < 0:
+            if self._collision(world, dir.UP, new_pos):
+                self.y = (1 + floor(self.y/40)) * 40
+                self._dy = 0
+            else:
+                self.y += self._dy
 
     def _calculate_grid_check_positions(self):
         # Get bias to left or right of cell.
@@ -55,19 +73,21 @@ class Entity(Rectangle):
         return (grid_x, grid_y)
 
 
-    def _collision(self, world, direction):
+    def _collision(self, world, direction, pos=None):
+        if pos == None:
+            pos = (self.x, self.y)
         points = []
 
-        if direction == pos.UP:
+        if direction == dir.UP:
             points = [(self.x + 1,              self.y - 1),
                       (self.x + self.width - 1, self.y - 1)]
-        elif direction == pos.RIGHT:
+        elif direction == dir.RIGHT:
             points = [(self.x + self.width + 1, self.y + 1),
                       (self.x + self.width + 1, self.y + self.height - 1)]
-        elif direction == pos.DOWN:
+        elif direction == dir.DOWN:
             points = [(self.x + 1,              self.y + self.height + 1),
                       (self.x + self.width - 1, self.y + self.height + 1)]
-        elif direction == pos.LEFT:
+        elif direction == dir.LEFT:
             points = [(self.x - 1, self.y + 1),
                       (self.x - 1, self.y + self.height - 1)]
         else:
@@ -83,7 +103,7 @@ class Entity(Rectangle):
         return collision
 
     def jump(self, world):
-        if self._collision(world, pos.DOWN):
+        if self._collision(world, dir.DOWN):
             self._dy = -12
         elif self._double_jump:
             self._double_jump = False
